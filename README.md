@@ -5,26 +5,26 @@
 # World News 20 November 2026
 
 A one-image summary of 20 November 2026's world news, drawn as a
-newspaper front page. Entry for the [make.fun bounty "Sum up 20
-November's world news in one image"](https://make.fun/bounty/news-image-20261120)
+dense newspaper front page with 48 stories. Entry for the
+[make.fun bounty "Sum up 20 November's world news in one
+image"](https://make.fun/bounty/news-image-20261120)
 (`news-image-20261120`).
 
 ## What it shows
 
-Six panels plus an "Also today" footer:
+A lead story plus three columns of short items grouped by region:
 
-- **Shenzhen / Trilateral summit** — Trump, Xi and Putin meet in the
-  first-ever three-way summit.
-- **Washington / Iran** — Trump pushes the Iran decision to 2027,
-  saying he'll "see what happens" after Jan 1.
-- **The Hague / Justice** — the UN court (ICJ) rules Myanmar
-  committed genocide against the Rohingya.
-- **Space** — NASA confirms Voyager 1 has reached one light-day
-  from Earth; the 1977 probe's data flow has stopped.
-- **India / Storms** — Cyclone Akvan bears down on the Odisha
-  coast; 300,000 evacuated, 423 rescue teams deployed.
-- **Ukraine / Europe** — Europe says it is ready for talks with
-  Russia to end the war.
+- **Lead: Shenzhen / Trilateral summit** — Trump, Xi and Putin
+  meet in the first-ever three-way summit; joint statement: "a
+  nuclear war cannot be won and must never be fought."
+- **Asia & Pacific** — APEC's Shenzhen Outlook, Taiwan, Japan,
+  the Koreas, Cyclone Akvan, India, Indonesia.
+- **Europe & Ukraine, Middle East** — Europe's readiness for
+  Russia talks, Kyiv strikes, the Iran decision, Hormuz, the
+  Houthis, Somalia, Gaza, Syria.
+- **Americas, Justice, Business & Tech, Science & Space,
+  Sport & Culture** — the Pete Rose pardon, the ICJ genocide
+  ruling, the Anthropic IPO, Voyager 1, GTA 6, and more.
 
 ## How to run it
 
@@ -47,5 +47,6 @@ The headlines and figures are the day's reported news as of
 20 November 2026: the Shenzhen trilateral summit, Trump's Iran
 decision, the ICJ Rohingya genocide ruling, Voyager 1's
 one-light-day milestone, Cyclone Akvan, Europe's readiness for
-Russia talks, and the items in the footer (GTA 6 sales, the Hormuz
-tanker fire, Hayabusa2, North Korea's Yongbyon expansion).
+Russia talks, the Anthropic IPO, and the other items on the page
+(GTA 6 sales, the Hormuz tanker fire, Hayabusa2, North Korea's
+Yongbyon expansion, and more).

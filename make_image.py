@@ -1,9 +1,9 @@
-"""Draw a 1024x1024 newspaper front page summing up 20 November 2026.
+"""Draw a 1024x1024 dense newspaper front page summing up 20 November 2026.
 
 Deterministic: fixed fonts, fixed colours, no timestamps, no randomness.
-Each story panel has a small drawn icon on its left so the story is
-clear from its picture as well as its label. Run directly to write
-entry.png next to this file.
+A lead story plus three columns of short items grouped by region, so
+the day's breadth (48 stories) is visible at a glance. Run directly
+to write entry.png next to this file.
 """
 
 from PIL import Image, ImageDraw, ImageFont
@@ -13,10 +13,6 @@ PAPER = (253, 251, 244)
 INK = (20, 20, 20)
 RULE = (60, 60, 60)
 ACCENT = (139, 0, 0)
-PANEL_BG = (255, 255, 255)
-BLUE = (28, 68, 140)
-GOLD = (212, 160, 23)
-TEAL = (18, 110, 110)
 
 SERIF_BOLD = "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf"
 SANS = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
@@ -47,132 +43,157 @@ def wrap(draw, text, fnt, max_width):
     return lines
 
 
-# --- icons: each draws inside a square centred on (cx, cy), half-size s ---
-def icon_summit(d, cx, cy, s):
-    """Three small flags: US, China, Russia."""
-    fw, fh = int(s * 0.62), int(s * 0.78)
-    gap = int(s * 0.14)
-    x = cx - (3 * fw + 2 * gap) // 2
-    y = cy - fh // 2
-    # US: red/white stripes, blue canton
-    for i in range(5):
-        d.rectangle([x, y + i * fh // 5, x + fw, y + (i + 1) * fh // 5],
-                    fill=(178, 34, 34) if i % 2 == 0 else (255, 255, 255))
-    d.rectangle([x, y, x + fw // 2, y + fh * 2 // 5], fill=BLUE)
-    d.ellipse([x + 4, y + 4, x + 9, y + 9], fill=(255, 255, 255))
-    d.rectangle([x, y, x + fw, y + fh], outline=RULE, width=1)
-    x += fw + gap
-    # China: red field, yellow stars
-    d.rectangle([x, y, x + fw, y + fh], fill=(222, 41, 16))
-    d.ellipse([x + 5, y + 5, x + 13, y + 13], fill=GOLD)
-    d.ellipse([x + fw - 12, y + 6, x + fw - 6, y + 12], fill=GOLD)
-    d.rectangle([x, y, x + fw, y + fh], outline=RULE, width=1)
-    x += fw + gap
-    # Russia: white, blue, red horizontal stripes
-    for i, c in enumerate([(255, 255, 255), BLUE, (178, 34, 34)]):
-        d.rectangle([x, y + i * fh // 3, x + fw, y + (i + 1) * fh // 3], fill=c)
-    d.rectangle([x, y, x + fw, y + fh], outline=RULE, width=1)
-
-
-def icon_clock(d, cx, cy, s):
-    d.ellipse([cx - s, cy - s, cx + s, cy + s], fill=(240, 240, 235))
-    d.ellipse([cx - s, cy - s, cx + s, cy + s], outline=INK, width=3)
-    d.line([(cx, cy), (cx, cy - int(s * 0.62))], fill=INK, width=3)
-    d.line([(cx, cy), (cx + int(s * 0.5), cy + int(s * 0.28))], fill=INK, width=3)
-    d.ellipse([cx - 3, cy - 3, cx + 3, cy + 3], fill=ACCENT)
-
-
-def icon_scales(d, cx, cy, s):
-    d.line([(cx, cy - s), (cx, cy + s)], fill=INK, width=3)
-    d.line([(cx - s, cy - int(s * 0.55)), (cx + s, cy - int(s * 0.55))],
-           fill=INK, width=3)
-    d.ellipse([cx - 4, cy - s - 4, cx + 4, cy - s + 4], fill=GOLD)
-    for sx in (cx - s, cx + s):
-        d.line([(sx, cy - int(s * 0.55)), (sx, cy + int(s * 0.1))],
-               fill=INK, width=2)
-        d.polygon([(sx - int(s * 0.42), cy + int(s * 0.1)),
-                   (sx + int(s * 0.42), cy + int(s * 0.1)),
-                   (sx, cy + int(s * 0.62))], fill=GOLD, outline=INK)
-    d.line([(cx - int(s * 0.5), cy + s), (cx + int(s * 0.5), cy + s)],
-           fill=INK, width=3)
-
-
-def icon_probe(d, cx, cy, s):
-    # stars
-    for sx, sy in ((cx - s, cy - s), (cx + s, cy - s + 6),
-                   (cx - int(s * 0.7), cy + int(s * 0.7))):
-        d.ellipse([sx - 2, sy - 2, sx + 2, sy + 2], fill=GOLD)
-    # dish + body
-    d.line([(cx - int(s * 0.5), cy - int(s * 0.5)),
-            (cx + int(s * 0.2), cy + int(s * 0.2))], fill=INK, width=3)
-    d.polygon([(cx + int(s * 0.2), cy - int(s * 0.55)),
-               (cx + int(s * 0.75), cy + int(s * 0.1)),
-               (cx + int(s * 0.05), cy + int(s * 0.35))],
-              fill=(200, 200, 200), outline=INK)
-    d.ellipse([cx - int(s * 0.45), cy - int(s * 0.15),
-               cx + int(s * 0.15), cy + int(s * 0.45)],
-              fill=BLUE, outline=INK)
-    d.line([(cx - int(s * 0.4), cy + int(s * 0.5)),
-            (cx - int(s * 0.75), cy + int(s * 0.8))], fill=INK, width=2)
-
-
-def icon_cyclone(d, cx, cy, s):
-    # spiral: concentric arcs
-    for r, start in ((s, 20), (int(s * 0.72), 110), (int(s * 0.45), 200)):
-        d.arc([cx - r, cy - r, cx + r, cy + r], start, start + 260,
-              fill=TEAL, width=3)
-    d.ellipse([cx - 4, cy - 4, cx + 4, cy + 4], fill=ACCENT)
-    # rain drops
-    for dx in (-int(s * 0.8), 0, int(s * 0.8)):
-        d.line([(cx + dx, cy + s + 4), (cx + dx - 3, cy + s + 14)],
-               fill=BLUE, width=3)
-
-
-def icon_eu(d, cx, cy, s):
-    import math
-    d.ellipse([cx - s, cy - s, cx + s, cy + s], fill=BLUE)
-    for i in range(12):
-        a = math.pi * 2 * i / 12 - math.pi / 2
-        sx = cx + int(s * 0.68 * math.cos(a))
-        sy = cy + int(s * 0.68 * math.sin(a))
-        d.ellipse([sx - 3, sy - 3, sx + 3, sy + 3], fill=GOLD)
-
-
-ICONS = {
-    "summit": icon_summit,
-    "clock": icon_clock,
-    "scales": icon_scales,
-    "probe": icon_probe,
-    "cyclone": icon_cyclone,
-    "eu": icon_eu,
-}
-
-
-def draw_panel(draw, box, kicker, headline, body, icon=None,
-               head_size=25, body_size=18, icon_w=72):
-    x0, y0, x1, y1 = box
-    draw.rectangle(box, fill=PANEL_BG, outline=RULE, width=1)
-    pad = 16
-    tx = x0 + pad
-    if icon is not None:
-        ix = x0 + pad + icon_w // 2
-        iy = (y0 + y1) // 2
-        ICONS[icon](draw, ix, iy, 26)
-        tx = x0 + pad + icon_w + 8
-    w = x1 - tx - pad
-    y = y0 + 12
-    kf = font(SANS_BOLD, 17)
-    draw.text((tx, y), kicker, font=kf, fill=ACCENT)
-    y += 26
-    hf = font(SANS_BOLD, head_size)
-    for line in wrap(draw, headline, hf, w):
-        draw.text((tx, y), line, font=hf, fill=INK)
-        y += head_size + 6
-    y += 4
-    bf = font(SANS, body_size)
-    for line in wrap(draw, body, bf, w):
-        draw.text((tx, y), line, font=bf, fill=INK)
-        y += body_size + 6
+# (region, headline, detail). Region shown as a header when it changes.
+# Details are kept short so each fits on one line.
+COLUMNS = [
+    [  # Asia & Pacific
+        ("ASIA & PACIFIC",
+         "APEC adopts Shenzhen Outlook on trade and AI",
+         "Xi chairs summit; Vietnam takes over as host for 2027."),
+        ("ASIA & PACIFIC",
+         "Xi: US should do 'right thing' on Taiwan",
+         "Warns of setbacks in ties after talks with Trump."),
+        ("ASIA & PACIFIC",
+         "Japan PM Takaichi meets Putin at APEC",
+         "Raises detained national; Taiwan stance unchanged."),
+        ("ASIA & PACIFIC",
+         "South Korea's Lee: talks with North could end war",
+         "Hopes reopened dialogue leads to lasting peace."),
+        ("ASIA & PACIFIC",
+         "North Korea expanding Yongbyon enrichment",
+         "IAEA calls it a 'cause for serious concern'."),
+        ("ASIA & PACIFIC",
+         "South Korea exports top $1 trillion",
+         "First time annual exports pass the trillion mark."),
+        ("ASIA & PACIFIC",
+         "Taiwan moves to steady falling stocks",
+         "Regulator unveils five measures to steady stocks."),
+        ("ASIA & PACIFIC",
+         "Taiwan stocks fall 5,248 points in three days",
+         "Sharpest three-day drop prompts regulator action."),
+        ("ASIA & PACIFIC",
+         "China curbs mineral exports to Japan",
+         "Beijing restricts minerals, bans seafood in Taiwan row."),
+        ("ASIA & PACIFIC",
+         "Cyclone Akvan: 300,000 evacuated in Odisha",
+         "423 rescue teams deployed as storm nears landfall."),
+        ("ASIA & PACIFIC",
+         "Modi meets Prince and Princess of Wales",
+         "India-UK ties and strategic cooperation on agenda."),
+        ("ASIA & PACIFIC",
+         "India exports up 16.6%; electronics jump 44%",
+         "April-September exports keep $1tn target in reach."),
+        ("ASIA & PACIFIC",
+         "ISRO names four Gaganyaan astronaut candidates",
+         "India's first human spaceflight advances."),
+        ("ASIA & PACIFIC",
+         "Indonesia passes asset-forfeiture bill",
+         "Parliament approves seizures without conviction."),
+        ("ASIA & PACIFIC",
+         "India-Malaysia joint exercise begins in Ipoh",
+         "'Harimau Shakti' drills open in Malaysia."),
+        ("ASIA & PACIFIC",
+         "ICMR completes 100 healthcare tech transfers",
+         "Indian medical research reaches licensing milestone."),
+    ],
+    [  # Europe, Ukraine, Middle East
+        ("EUROPE & UKRAINE",
+         "Europe ready for talks with Russia to end war",
+         "Leaders prepared to negotiate an end to the war."),
+        ("EUROPE & UKRAINE",
+         "Kyiv hit by four ballistic missiles",
+         "Russian strikes damage Austrian and Dutch embassies."),
+        ("EUROPE & UKRAINE",
+         "France, Germany, UK discuss meeting Russia",
+         "Allies weigh direct talks after the Shenzhen summit."),
+        ("EUROPE & UKRAINE",
+         "Poland PM joins Ukraine allies in Berlin",
+         "Coalition meets after Trump-Putin talks in China."),
+        ("EUROPE & UKRAINE",
+         "UK and Norway fund two Ukrainian naval craft",
+         "Joint programme worth over £100 million."),
+        ("EUROPE & UKRAINE",
+         "Denmark approves Greenland defence deal 109-0",
+         "Parliament backs the agreement signed in September."),
+        ("EUROPE & UKRAINE",
+         "Genoa airport halts flights after drone sightings",
+         "Operations suspended for four hours overnight."),
+        ("MIDDLE EAST",
+         "Trump pushes Iran decision to 2027",
+         "Says he'll 'see what happens' after Jan 1; no rush."),
+        ("MIDDLE EAST",
+         "US Senate rejects Iran war-powers resolution",
+         "Vote 51-48 against curbing Trump's war powers."),
+        ("MIDDLE EAST",
+         "US strikes Iranian island in Hormuz",
+         "Tanker burns after mine hit; one crew missing."),
+        ("MIDDLE EAST",
+         "Houthis claim strikes on four Saudi targets",
+         "Riyadh landmark building damaged in the attack."),
+        ("MIDDLE EAST",
+         "Somalia orders UAE ambassador to leave",
+         "Accuses UAE of an 'open invasion' of sovereignty."),
+        ("MIDDLE EAST",
+         "Israel hits Hezbollah missile site in Lebanon",
+         "Airstrike targets facility in the east of the country."),
+        ("MIDDLE EAST",
+         "Syria hails UN resolution on post-war progress",
+         "Damascus welcomes recognition of its recovery."),
+        ("MIDDLE EAST",
+         "Gaza aid groups rate peace plan 4 out of 26",
+         "Five agencies say implementation is lagging."),
+        ("MIDDLE EAST",
+         "One dead, 15 hurt in French apartment fire",
+         "Blaze hits an 18-storey block; 15 injured."),
+    ],
+    [  # Americas, science, business, sport
+        ("AMERICAS",
+         "Trump pardons baseball legend Pete Rose",
+         "Posthumous pardon for the late baseball star."),
+        ("AMERICAS",
+         "California targets Nvidia in China chip probe",
+         "State investigates AI chip sales to China."),
+        ("JUSTICE",
+         "UN court: Myanmar committed genocide",
+         "ICJ rules 9-6; 730,000 fled the 2017 crackdown."),
+        ("BUSINESS & TECH",
+         "Anthropic IPO raises $81.3bn, largest ever",
+         "Shares debut on Nasdaq at $83; valued near $1.5tn."),
+        ("BUSINESS & TECH",
+         "AI data centres need $3.9tn by 2030",
+         "IEA: power supply is the bottleneck for build-out."),
+        ("BUSINESS & TECH",
+         "Sensex jumps 1,000 points to 83,021",
+         "Nifty crosses 25,500 on banking and auto buying."),
+        ("SCIENCE & SPACE",
+         "Voyager 1 reaches one light-day from Earth",
+         "NASA confirms milestone; data flow has stopped."),
+        ("SCIENCE & SPACE",
+         "Hayabusa2 scraps asteroid landing",
+         "Engine trouble forces Japan's probe to change plans."),
+        ("SCIENCE & SPACE",
+         "Hydrogen flame colour mystery solved",
+         "Sea salt in the air explains the orange glow."),
+        ("SPORT & CULTURE",
+         "GTA 6 sales pass $1.8bn, topping The Odyssey",
+         "Fastest-selling entertainment launch ever."),
+        ("SPORT & CULTURE",
+         "Nicholls 113* as New Zealand reach 243/5",
+         "First Test against India, Day 1 in Wellington."),
+        ("SPORT & CULTURE",
+         "Zverev into ATP Finals semi-finals",
+         "Beats Shelton in Turin; Alcaraz stays unbeaten."),
+        ("SPORT & CULTURE",
+         "Fiona the hippo dies after swallowing a hat",
+         "Cincinnati Zoo mourns its beloved hippo."),
+        ("SPORT & CULTURE",
+         "Global Champions Tour finale moves to Verona",
+         "Show jumping relocates from Riyadh amid conflict."),
+        ("SPORT & CULTURE",
+         "COP31 AI pledge fails to win big US tech firms",
+         "Major American companies stay away from the pledge."),
+    ],
+]
 
 
 def build_image():
@@ -182,86 +203,63 @@ def build_image():
 
     # Masthead
     title = "THE WORLD IN ONE DAY"
-    tf = font(SERIF_BOLD, 56)
+    tf = font(SERIF_BOLD, 46)
     tw = draw.textlength(title, font=tf)
-    draw.text(((W - tw) / 2, 26), title, font=tf, fill=INK)
-    draw.line([(M, 100), (W - M, 100)], fill=RULE, width=2)
-    date = "FRIDAY 20 NOVEMBER 2026"
-    df = font(SANS_BOLD, 26)
+    draw.text(((W - tw) / 2, 16), title, font=tf, fill=INK)
+    draw.line([(M, 72), (W - M, 72)], fill=RULE, width=2)
+    date = "FRIDAY 20 NOVEMBER 2026  •  48 STORIES"
+    df = font(SANS_BOLD, 18)
     dw = draw.textlength(date, font=df)
-    draw.text(((W - dw) / 2, 110), date, font=df, fill=INK)
-    draw.line([(M, 148), (W - M, 148)], fill=RULE, width=3)
+    draw.text(((W - dw) / 2, 80), date, font=df, fill=INK)
+    draw.line([(M, 106), (W - M, 106)], fill=RULE, width=3)
 
     # Lead story, full width
-    draw_panel(
-        draw, (M, 162, W - M, 338),
-        "SHENZHEN  •  TRILATERAL SUMMIT",
-        "Trump, Xi & Putin meet in first-ever three-way summit",
-        "Nuclear powers open talks in Shenzhen; nuclear cuts, Ukraine "
-        "and Iran on the agenda.",
-        icon="summit", head_size=34, body_size=21, icon_w=150,
-    )
+    lx0, ly0, lx1, ly1 = M, 114, W - M, 206
+    draw.rectangle((lx0, ly0, lx1, ly1), fill=(255, 255, 255), outline=RULE, width=1)
+    kf = font(SANS_BOLD, 15)
+    draw.text((lx0 + 14, ly0 + 8), "SHENZHEN  •  TRILATERAL SUMMIT", font=kf, fill=ACCENT)
+    hf = font(SANS_BOLD, 26)
+    draw.text((lx0 + 14, ly0 + 30), "Trump, Xi & Putin meet in first-ever three-way summit",
+              font=hf, fill=INK)
+    bf = font(SANS, 15)
+    lead_body = ("Nuclear cuts, Ukraine and Iran on the agenda; joint statement: "
+                 "'a nuclear war cannot be won and must never be fought.'")
+    by = ly0 + 62
+    for line in wrap(draw, lead_body, bf, lx1 - lx0 - 28)[:2]:
+        draw.text((lx0 + 14, by), line, font=bf, fill=INK)
+        by += 19
 
-    # Row 2: Iran and The Hague
-    mid = (W - 12) // 2
-    draw_panel(
-        draw, (M, 350, mid, 514),
-        "WASHINGTON  •  IRAN",
-        "Trump pushes Iran decision to 2027",
-        "Says he'll 'see what happens' after Jan 1; no rush.",
-        icon="clock",
-    )
-    draw_panel(
-        draw, (mid + 12, 350, W - M, 514),
-        "THE HAGUE  •  JUSTICE",
-        "UN court: Myanmar committed genocide",
-        "ICJ rules the 2017 crackdown drove 730,000 to Bangladesh.",
-        icon="scales",
-    )
+    # Columns
+    col_w = (W - 2 * M - 2 * 12) // 3
+    col_x = [M, M + col_w + 12, M + 2 * (col_w + 12)]
+    top = 214
+    bottom = H - 14
+    hf_item = font(SANS_BOLD, 13)
+    bf_item = font(SANS, 11)
+    rf = font(SANS_BOLD, 12)
 
-    # Row 3: Space and India
-    draw_panel(
-        draw, (M, 526, mid, 690),
-        "SPACE",
-        "Voyager 1 reaches one light-day from Earth",
-        "NASA confirms the milestone; the 1977 probe's data flow "
-        "has stopped.",
-        icon="probe",
-    )
-    draw_panel(
-        draw, (mid + 12, 526, W - M, 690),
-        "INDIA  •  STORMS",
-        "Cyclone Akvan: 300,000 evacuated",
-        "Storm bears down on Odisha; 423 rescue teams deployed.",
-        icon="cyclone",
-    )
-
-    # Panel 6: Europe, full width
-    draw_panel(
-        draw, (M, 702, W - M, 842),
-        "UKRAINE  •  EUROPE",
-        "Europe ready for talks with Russia to end the war",
-        "Leaders say they are prepared to negotiate an end to the "
-        "Ukraine war.",
-        icon="eu", head_size=28, body_size=19, icon_w=110,
-    )
-
-    # Footer: Also today
-    fx0, fy0, fx1, fy1 = M, 854, W - M, 996
-    draw.rectangle((fx0, fy0, fx1, fy1), fill=PANEL_BG, outline=RULE, width=1)
-    kf = font(SANS_BOLD, 17)
-    draw.text((fx0 + 16, fy0 + 10), "ALSO TODAY", font=kf, fill=ACCENT)
-    footer = (
-        "GTA 6 sales pass $1.8bn, topping The Odyssey  •  "
-        "Tanker burns after hitting a mine near Hormuz  •  "
-        "Hayabusa2 scraps asteroid landing after engine trouble  •  "
-        "IAEA: North Korea expanding Yongbyon enrichment"
-    )
-    bf = font(SANS, 19)
-    y = fy0 + 38
-    for line in wrap(draw, footer, bf, fx1 - fx0 - 32):
-        draw.text((fx0 + 16, y), line, font=bf, fill=INK)
-        y += 25
+    for ci, items in enumerate(COLUMNS):
+        x = col_x[ci]
+        y = top
+        region = None
+        for reg, head, detail in items:
+            if reg != region:
+                region = reg
+                draw.text((x, y), region, font=rf, fill=ACCENT)
+                draw.line([(x, y + 17), (x + col_w, y + 17)], fill=ACCENT, width=1)
+                y += 24
+            head_lines = wrap(draw, head, hf_item, col_w)
+            for line in head_lines[:2]:
+                draw.text((x, y), line, font=hf_item, fill=INK)
+                y += 16
+            det_lines = wrap(draw, detail, bf_item, col_w)
+            for line in det_lines[:1]:
+                draw.text((x, y), line, font=bf_item, fill=(70, 70, 70))
+                y += 14
+            y += 7
+        if ci < 2:
+            draw.line([(x + col_w + 6, top), (x + col_w + 6, bottom)],
+                      fill=(200, 200, 190), width=1)
 
     return img
 
