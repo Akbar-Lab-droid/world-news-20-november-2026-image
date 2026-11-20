@@ -1,27 +1,30 @@
-"""Sum up 20 November 2026 world news in one image.
+"""World News 20 November 2026 in a single image.
 
-The image is entry.png beside this file, drawn with PIL from the
-day's reported news (see README.md). This program copies it to
-the output directory, deterministically, with no network access.
-It uses only the standard library, so it runs in the grader's
-minimal image without Pillow installed.
-Run locally: mkdir -p out && MAKEFUN_OUTPUT_DIR=out python3 main.py
+Entry for make.fun's "Sum up 20 November's world news in one
+image" bounty (news-image-20261120). The picture itself is
+entry.png, kept in this repository and drawn from the day's
+reported news. Running this program places a copy of that
+picture at the output location the grader reads. It needs
+nothing beyond the Python standard library, reaches no
+network, and writes the same bytes every time it runs.
 """
+
 import os
 import shutil
 import sys
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parent
+
 
 def main():
-    src = Path(__file__).resolve().parent / "entry.png"
-    if not src.is_file():
-        sys.exit(f"missing source image: {src}")
-    out_dir = Path(os.environ.get("MAKEFUN_OUTPUT_DIR", "/output"))
-    out_dir.mkdir(parents=True, exist_ok=True)
-    dest = out_dir / "entry.png"
-    shutil.copyfile(src, dest)
-    print("wrote", dest)
+    image = ROOT / "entry.png"
+    if not image.is_file():
+        sys.exit("entry.png not found next to main.py")
+    output = Path(os.environ.get("MAKEFUN_OUTPUT_DIR", "/output"))
+    output.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(image, output / "entry.png")
+    print("wrote", output / "entry.png")
 
 
 if __name__ == "__main__":
